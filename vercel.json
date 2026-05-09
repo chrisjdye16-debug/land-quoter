@@ -1,0 +1,8 @@
+{
+  "buildCommand": "prisma generate && prisma db push --accept-data-loss && next build",
+  "functions": {
+    "src/app/api/projects/[id]/upload-topo/route.ts": {
+      "maxDuration": 120
+    }
+  }
+}
