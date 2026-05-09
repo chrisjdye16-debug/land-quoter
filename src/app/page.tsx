@@ -4,13 +4,88 @@ import { NewLeadForm } from "./NewLeadForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  await ensureSchema();
-  const leads = await prisma.lead.findMany({
-    orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { projects: true } } },
-  });
+async function loadLeads() {
+  try {
+    await ensureSchema();
+    const leads = await prisma.lead.findMany({
+      orderBy: { updatedAt: "desc" },
+      include: { _count: { select: { projects: true } } },
+    });
+    return { ok: true as const, leads };
+  } catch (e: any) {
+    return {
+      ok: false as const,
+      error: String(e?.message || e),
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      databaseUrlPrefix: process.env.DATABASE_URL
+        ? process.env.DATABASE_URL.slice(0, 25) + "…"
+        : null,
+    };
+  }
+}
 
+export default async function Home() {
+  const result = await loadLeads();
+
+  if (!result.ok) {
+    return (
+      <div className="card border-red-300 bg-red-50">
+        <h2 className="mb-3 text-lg font-bold text-red-900">⚠️ Database not connected</h2>
+        <p className="mb-4 text-sm text-red-800">
+          The site deployed successfully, but it can't reach the database. Check the details below
+          and update <code className="rounded bg-red-100 px-1">DATABASE_URL</code> in your hosting
+          platform's environment variables, then trigger a new deploy.
+        </p>
+        <div className="space-y-2 rounded-md bg-white p-4 font-mono text-xs">
+          <div>
+            <strong>DATABASE_URL set?</strong>{" "}
+            {result.hasDatabaseUrl ? (
+              <span className="text-green-700">✅ yes</span>
+            ) : (
+              <span className="text-red-700">❌ NOT SET — this is your problem</span>
+            )}
+          </div>
+          {result.databaseUrlPrefix && (
+            <div>
+              <strong>URL starts with:</strong> {result.databaseUrlPrefix}
+              <br />
+              <span className="text-stone-500">
+                (Should start with{" "}
+                <code className="bg-stone-100 px-1">postgresql://</code>)
+              </span>
+            </div>
+          )}
+          <div>
+            <strong>Error:</strong>
+            <pre className="mt-1 whitespace-pre-wrap break-all rounded bg-stone-100 p-2 text-stone-800">
+              {result.error}
+            </pre>
+          </div>
+        </div>
+        <div className="mt-4 text-sm text-red-900">
+          <p className="mb-2 font-semibold">Fix steps:</p>
+          <ol className="ml-5 list-decimal space-y-1">
+            <li>
+              Go to your hosting platform → site settings → Environment variables
+            </li>
+            <li>
+              Confirm <code className="rounded bg-red-100 px-1">DATABASE_URL</code> exists and
+              starts with <code className="rounded bg-red-100 px-1">postgresql://</code>
+            </li>
+            <li>
+              No quotes around the value, no leading/trailing spaces, ends with{" "}
+              <code className="rounded bg-red-100 px-1">?sslmode=require</code>
+            </li>
+            <li>
+              Save → trigger a new deploy → reload this page
+            </li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
+  const { leads } = result;
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
       <div className="card">
