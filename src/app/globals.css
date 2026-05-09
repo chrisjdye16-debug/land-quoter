@@ -3,18 +3,25 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --bg: #0c0a09;
-  --bg-2: #1c1917;
-  --line: #292524;
-  --text: #fafaf9;
-  --muted: #a8a29e;
-  --gold: #f59e0b;
+  color-scheme: light;
+  --bg: #fbfaf7;
+  --paper: #ffffff;
+  --ink: #18181b;
+  --ink-2: #3f3f46;
+  --muted: #71717a;
+  --muted-2: #a1a1aa;
+  --line: #e7e5e4;
+  --line-2: #d6d3d1;
+  --accent: #0e4d3e;
+  --accent-soft: #ecfdf5;
+  --accent-ink: #064e3b;
+  --positive: #047857;
+  --warn: #b45309;
 }
 
 html, body {
   background: var(--bg);
-  color: var(--text);
+  color: var(--ink);
   font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv11", "ss01", "ss03";
   -webkit-font-smoothing: antialiased;
@@ -22,19 +29,8 @@ html, body {
 }
 
 .font-display {
-  font-family: "Playfair Display", Georgia, serif;
-}
-
-/* Subtle radial gridded background */
-.bg-grid {
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(circle at 20% 0%, rgba(245, 158, 11, 0.08), transparent 40%),
-    radial-gradient(circle at 80% 100%, rgba(120, 113, 108, 0.08), transparent 40%),
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: auto, auto, 32px 32px, 32px 32px;
-  background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+  font-family: "Fraunces", "Playfair Display", Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
 }
 
 /* Tabular numerals everywhere — quoting is numbers-first */
@@ -43,94 +39,152 @@ html, body {
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-/* Card with subtle gradient + glow border */
+/* Soft, paper-feeling card */
 .card {
-  background: linear-gradient(180deg, rgba(28, 25, 23, 0.9), rgba(12, 10, 9, 0.9));
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 1px 2px rgba(24, 24, 27, 0.04),
+    0 12px 32px -16px rgba(24, 24, 27, 0.08);
+}
+
+.card-feature {
+  background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
   border: 1px solid var(--line);
   border-radius: 20px;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 30px 60px -30px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-}
-
-.card-glow {
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 1px 2px rgba(24, 24, 27, 0.04),
+    0 24px 48px -24px rgba(14, 77, 62, 0.12);
   position: relative;
+  overflow: hidden;
 }
-.card-glow::before {
+.card-feature::before {
   content: "";
-  position: absolute; inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
+  position: absolute;
+  top: 0; left: 24px; right: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
+  opacity: 0.7;
 }
 
+/* Buttons */
 .btn {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors;
-  background: linear-gradient(180deg, #f59e0b, #d97706);
-  color: #1c1917;
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-all;
+  background: var(--accent);
+  color: #f7fef9;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3) inset,
-    0 8px 24px -8px rgba(245, 158, 11, 0.5);
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 6px 16px -8px rgba(14, 77, 62, 0.45);
+  letter-spacing: -0.005em;
 }
-.btn:hover { filter: brightness(1.05); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+.btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; transform: none; }
 
 .btn-secondary {
   @apply inline-flex items-center justify-center rounded-xl border px-4 py-3 text-sm font-medium transition-colors;
-  border-color: var(--line);
-  background: rgba(28, 25, 23, 0.6);
-  color: var(--text);
+  border-color: var(--line-2);
+  background: var(--paper);
+  color: var(--ink);
 }
-.btn-secondary:hover { background: rgba(41, 37, 36, 0.8); }
+.btn-secondary:hover { background: #f5f5f4; border-color: #a8a29e; }
 
 .btn-ghost {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-medium text-stone-400 transition-colors;
+  @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition-colors;
+  color: var(--muted);
 }
-.btn-ghost:hover { color: var(--text); }
+.btn-ghost:hover { color: var(--ink); }
 
+.btn-danger {
+  @apply inline-flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-medium transition-colors;
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.btn-danger:hover { background: #fee2e2; }
+
+/* Inputs */
 .input {
   width: 100%;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: rgba(12, 10, 9, 0.5);
-  color: var(--text);
-  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 11px 13px;
   font-size: 16px; /* prevents iOS zoom */
-  transition: border-color 120ms, box-shadow 120ms;
+  transition: border-color 120ms, box-shadow 120ms, background 120ms;
 }
-.input::placeholder { color: #57534e; }
+.input::placeholder { color: var(--muted-2); }
 .input:focus {
   outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(14, 77, 62, 0.12);
+  background: #fdfdfc;
 }
 
 .label {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
+/* Accent pill */
 .chip {
   @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider;
-  background: rgba(245, 158, 11, 0.15);
-  color: var(--gold);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: 1px solid #d1fae5;
 }
 
+/* Tables */
 table.t { @apply w-full text-sm; }
-table.t th { @apply border-b px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider; border-color: var(--line); color: var(--muted); }
-table.t td { @apply border-b px-2 py-2.5; border-color: var(--line); }
-table.t tr:hover td { background: rgba(28, 25, 23, 0.5); }
+table.t th {
+  @apply border-b px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider;
+  border-color: var(--line);
+  color: var(--muted);
+}
+table.t td { @apply border-b px-3 py-2.5; border-color: var(--line); color: var(--ink); }
+table.t tr:hover td { background: #fafaf9; }
 
 /* Hide number input spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+
+/* Subtle textured bg — paper feel */
+.bg-paper {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(14, 77, 62, 0.04), transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(180, 83, 9, 0.03), transparent 50%);
+}
+
+/* Section divider */
+.divider {
+  @apply flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.18em];
+  color: var(--muted);
+}
+.divider::before, .divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+
+/* Metric tile */
+.metric {
+  border-radius: 12px;
+  background: #fafaf9;
+  border: 1px solid var(--line);
+  padding: 12px 10px;
+  text-align: center;
+}
+.metric-accent {
+  background: var(--accent-soft);
+  border-color: #d1fae5;
+}
