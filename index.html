@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f2a44">
+<title>Land Quoter — Dirt import estimates</title>
+<meta name="description" content="Fast, premium dirt-import quotes for land developers. Live calculation, optional save.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --ink: #0f172a;
+    --ink-soft: #334155;
+    --muted: #64748b;
+    --line: #e5e7eb;
+    --line-soft: #eef0f3;
+    --primary: #0f2a44;
+    --primary-700: #0a1f33;
+    --primary-50: #eef3f9;
+    --accent: #b88a2c;
+    --good: #047857;
+    --good-bg: #ecfdf5;
+    --bad: #b91c1c;
+    --bad-bg: #fef2f2;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.05);
+    --shadow-md: 0 1px 2px rgba(15,23,42,.04), 0 12px 32px -16px rgba(15,23,42,.18);
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+  }
+
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-feature-settings: "cv11","ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 24px 20px 96px; }
+  @media (min-width: 640px) { .container { padding: 48px 32px 112px; } }
+
+  /* Header */
+  .nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+  .logo {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--primary); color: #fff;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 1px 2px rgba(15,42,68,.2);
+  }
+  .brand-name { font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    padding: 10px 14px; border-radius: 8px;
+    text-decoration: none; color: var(--muted);
+    font-weight: 500; font-size: 14px;
+    min-height: 44px; display: flex; align-items: center;
+    transition: color .15s, background .15s;
+  }
+  .nav-link:hover { color: var(--ink); }
+  .nav-link.active { background: var(--primary-50); color: var(--primary); }
+
+  /* Hero */
+  .hero { margin-bottom: 24px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--primary); margin-bottom: 10px;
+  }
+  .h1 {
+    font-size: 30px; font-weight: 700; letter-spacing: -0.025em;
+    line-height: 1.1; margin: 0; color: var(--ink);
+  }
+  @media (min-width: 640px) { .h1 { font-size: 38px; } }
+  .lede { color: var(--muted); margin: 10px 0 0; font-size: 15px; max-width: 50ch; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  @media (min-width: 640px) { .card { padding: 28px; } }
+  .card-featured { box-shadow: var(--shadow-md); }
+
+  /* Section divider */
+  .section-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 24px 0 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--line-soft);
+  }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* Field */
+  .field { display: block; }
+  .field-label {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .field-name { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+  .field-suffix { font-size: 11px; font-weight: 500; color: var(--muted); }
+  .input {
+    width: 100%; min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: #fff;
+    font: inherit; font-size: 16px; font-weight: 500;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    transition: border-color .15s, box-shadow .15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .input::placeholder { color: #cbd5e1; font-weight: 400; }
+  .input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15,42,68,.1);
+  }
+  .input[type="number"]::-webkit-outer-spin-button,
+  .input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .input[type="number"] { -moz-appearance: textfield; }
+
+  /* Result */
+  .result-headline { text-align: center; padding: 8px 0 4px; }
+  .result-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .result-big {
+    font-size: 56px; font-weight: 700;
+    letter-spacing: -0.04em; line-height: 1;
+    color: var(--primary); margin: 10px 0 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 640px) { .result-big { font-size: 68px; } }
+  .result-unit {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .result-negative .result-big { color: var(--bad); }
+
+  .metrics {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    margin-top: 28px;
+  }
+  .metric {
+    background: #fafbfc;
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 14px 10px; text-align: center;
+  }
+  .metric-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .metric-value {
+    margin-top: 6px;
+    font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-value.is-good { color: var(--good); }
+  .metric-value.is-bad { color: var(--bad); }
+  .metric-value.is-primary { color: var(--primary); }
+
+  .margin-row {
+    margin-top: 14px;
+    padding: 14px 18px;
+    background: var(--primary-50);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .margin-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--primary);
+  }
+  .margin-value {
+    font-size: 18px; font-weight: 700; color: var(--primary);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+
+  .empty {
+    text-align: center; padding: 64px 20px;
+    color: var(--muted); font-size: 14px;
+    background: var(--surface); border: 1px dashed var(--line);
+    border-radius: var(--r-lg);
+  }
+  .empty a { color: var(--primary); text-decoration: none; font-weight: 600; }
+  .empty a:hover { text-decoration: underline; }
+
+  /* Buttons */
+  .btn {
+    width: 100%; min-height: 48px;
+    padding: 12px 20px;
+    background: var(--primary); color: #fff;
+    border: none; border-radius: 10px;
+    font: inherit; font-size: 15px; font-weight: 600;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    transition: background .15s, transform .05s;
+  }
+  .btn:hover { background: var(--primary-700); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 3px solid rgba(15,42,68,.25); outline-offset: 2px; }
+  .btn-secondary {
+    background: #fff; color: var(--primary);
+    border: 1px solid var(--line);
+  }
+  .btn-secondary:hover { background: #fafbfc; border-color: #cbd5e1; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  .save-cta { margin-top: 16px; }
+  .save-form { display: none; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .save-form.is-open { display: flex; }
+
+  /* Saved view */
+  .saved-list { list-style: none; padding: 0; margin: 0; }
+  .saved-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+  .saved-row { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+  .saved-name { font-weight: 600; font-size: 15px; color: var(--ink); margin-bottom: 4px; }
+  .saved-meta {
+    font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .saved-meta b { color: var(--ink-soft); font-weight: 600; }
+  .saved-cy {
+    font-weight: 700; font-size: 17px; color: var(--primary);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+    text-align: right; white-space: nowrap;
+  }
+  .saved-cy small { display: block; font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; letter-spacing: 0.1em; }
+  .saved-actions {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--line-soft);
+    display: flex; gap: 4px;
+  }
+  .link-btn {
+    background: none; border: none;
+    padding: 8px 12px; min-height: 36px;
+    color: var(--muted); font: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; border-radius: 6px;
+  }
+  .link-btn:hover { color: var(--bad); background: var(--bad-bg); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff;
+    padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; font-weight: 500;
+    box-shadow: 0 10px 25px rgba(15,23,42,.25);
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    max-width: calc(100vw - 32px);
+  }
+  .toast.is-shown { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Footer */
+  .foot {
+    margin-top: 40px; padding-top: 24px;
+    border-top: 1px solid var(--line-soft);
+    text-align: center;
+    font-size: 12px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="nav">
+    <a href="#/" class="brand">
+      <span class="logo">L</span>
+      <span class="brand-name">Land Quoter</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#/" class="nav-link" data-route="quote">Quote</a>
+      <a href="#/saved" class="nav-link" data-route="saved">Saved</a>
+    </nav>
+  </header>
+
+  <main id="view"></main>
+
+  <footer class="foot">
+    Saved quotes live in this browser. Nothing is sent anywhere.
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- formatting ----------
+  function fmt(n, d) {
+    if (d === undefined) d = 0;
+    if (n == null || !isFinite(n)) return '—';
+    return Number(n).toLocaleString(undefined, { maximumFractionDigits: d });
+  }
+  function money(n) {
+    if (n == null || !isFinite(n)) return '—';
+    return Number(n).toLocaleString(undefined, {
+      style: 'currency', currency: 'USD', maximumFractionDigits: 0,
+    });
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+    });
+  }
+
+  // ---------- calc ----------
+  // Compacted CY = (acreage * 43560 * elevation_diff) / 27
+  // Imported CY  = compacted_CY / (1 - shrinkage/100)
+  var SQFT_PER_ACRE = 43560;
+  var CF_PER_CY = 27;
+
+  function computeDirt(input) {
+    var a = parseFloat(input.acreage);
+    var c = parseFloat(input.current);
+    var t = parseFloat(input.target);
+    if (!isFinite(a) || a <= 0 || !isFinite(c) || !isFinite(t)) return null;
+
+    var liftFt = t - c;
+    var areaSqFt = a * SQFT_PER_ACRE;
+    var compactedCY = (areaSqFt * liftFt) / CF_PER_CY;
+
+    var shrinkPct = parseFloat(input.shrinkPct);
+    if (!isFinite(shrinkPct)) shrinkPct = 0;
+    var shrinkFactor = 1 - shrinkPct / 100;
+
+    var importedCY;
+    if (compactedCY > 0 && shrinkFactor > 0) importedCY = compactedCY / shrinkFactor;
+    else importedCY = compactedCY;
+
+    var costPerCY = parseFloat(input.costPerCY) || 0;
+    var sellPerCY = parseFloat(input.sellPerCY) || 0;
+    var billableCY = Math.max(0, importedCY);
+    var totalCost = billableCY * costPerCY;
+    var totalSell = billableCY * sellPerCY;
+    var profit = totalSell - totalCost;
+    var margin = totalSell > 0 ? (profit / totalSell) * 100 : 0;
+
+    return {
+      liftFt: liftFt,
+      compactedCY: compactedCY,
+      importedCY: importedCY,
+      totalCost: totalCost,
+      totalSell: totalSell,
+      profit: profit,
+      margin: margin,
+    };
+  }
+
+  // ---------- storage ----------
+  var KEY = 'land-quoter-db-v1';
+
+  function loadDb() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return { leads: [], projects: [] };
+      var p = JSON.parse(raw);
+      return {
+        leads: Array.isArray(p.leads) ? p.leads : [],
+        projects: Array.isArray(p.projects) ? p.projects : [],
+      };
+    } catch (e) { return { leads: [], projects: [] }; }
+  }
+  function saveDb(db) {
+    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {}
+  }
+  function uid() {
+    return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  }
+  function nowIso() { return new Date().toISOString(); }
+
+  function saveQuote(clientName, inputs, result) {
+    var db = loadDb();
+    var name = (clientName || '').trim() || 'Untitled quote';
+    var lead = {
+      id: uid(), name: name, status: 'new',
+      createdAt: nowIso(), updatedAt: nowIso(),
+    };
+    var project = {
+      id: uid(), leadId: lead.id,
+      name: fmt(parseFloat(inputs.acreage)) + '-ac fill',
+      acreage: parseFloat(inputs.acreage) || 0,
+      shots: [],
+      estimates: [{
+        id: uid(), type: 'dirt_import', version: 1,
+        acreage: parseFloat(inputs.acreage) || 0,
+        targetElevation: parseFloat(inputs.target) || 0,
+        avgElevation: parseFloat(inputs.current) || 0,
+        shrinkagePct: parseFloat(inputs.shrinkPct) || 0,
+        costPerCY: parseFloat(inputs.costPerCY) || 0,
+        sellPerCY: parseFloat(inputs.sellPerCY) || 0,
+        neatVolumeCY: result.compactedCY,
+        loadedVolumeCY: result.importedCY,
+        totalCost: result.totalCost,
+        totalSell: result.totalSell,
+        profit: result.profit,
+        margin: result.margin,
+        createdAt: nowIso(),
+      }],
+      createdAt: nowIso(), updatedAt: nowIso(),
+    };
+    db.leads.unshift(lead);
+    db.projects.unshift(project);
+    saveDb(db);
+    return lead;
+  }
+
+  function deleteSaved(projectId) {
+    var db = loadDb();
+    var proj = null;
+    for (var i = 0; i < db.projects.length; i++) {
+      if (db.projects[i].id === projectId) { proj = db.projects[i]; break; }
+    }
+    db.projects = db.projects.filter(function (p) { return p.id !== projectId; });
+    if (proj) db.leads = db.leads.filter(function (l) { return l.id !== proj.leadId; });
+    saveDb(db);
+  }
+
+  // ---------- toast ----------
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('is-shown');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.classList.remove('is-shown');
+    }, 2400);
+  }
+
+  // ---------- views ----------
+  function renderQuote() {
+    var view = document.getElementById('view');
+    view.innerHTML = ''
+      + '<section class="hero">'
+      +   '<div class="eyebrow">Dirt import estimate</div>'
+      +   '<h1 class="h1">Quote in seconds.</h1>'
+      +   '<p class="lede">Live calculation. No setup. Save when you want to.</p>'
+      + '</section>'
+
+      + '<section class="card">'
+      +   '<div class="grid-2">'
+      +     field('Acreage', 'ac', 'acreage', 'number', '200')
+      +     field('Shrinkage', '%', 'shrinkPct', 'number', '', '20')
+      +     field('Current elevation', 'ft', 'current', 'number', '427.26')
+      +     field('Target elevation', 'ft', 'target', 'number', '439')
+      +   '</div>'
+      +   '<div class="section-title">Pricing</div>'
+      +   '<div class="grid-2">'
+      +     field('Your cost', '$/CY', 'costPerCY', 'number', '0')
+      +     field('Sell price', '$/CY', 'sellPerCY', 'number', '0')
+      +   '</div>'
+      + '</section>'
+
+      + '<section id="result"></section>'
+      + '<section id="save-area" class="save-cta"></section>';
+
+    var inputEls = {};
+    var nodes = view.querySelectorAll('[data-input]');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      inputEls[el.getAttribute('data-input')] = el;
+      el.addEventListener('input', recompute);
+    }
+
+    function readInputs() {
+      var o = {};
+      Object.keys(inputEls).forEach(function (k) { o[k] = inputEls[k].value; });
+      return o;
+    }
+
+    var lastResult = null;
+
+    function recompute() {
+      var inp = readInputs();
+      var r = computeDirt(inp);
+      lastResult = r;
+      renderResult(r);
+    }
+
+    function renderResult(r) {
+      var resultEl = document.getElementById('result');
+      var saveEl = document.getElementById('save-area');
+
+      if (!r) {
+        resultEl.innerHTML = '<div class="empty">Enter acreage and elevations to see the estimate.</div>';
+        saveEl.innerHTML = '';
+        return;
+      }
+
+      var liftLabel = r.liftFt >= 0
+        ? fmt(r.liftFt, 2) + ' ft fill'
+        : fmt(Math.abs(r.liftFt), 2) + ' ft cut';
+      var displayCY = Math.max(0, r.importedCY);
+      var negativeClass = r.liftFt < 0 ? ' result-negative' : '';
+
+      resultEl.innerHTML = ''
+        + '<div class="card card-featured' + negativeClass + '">'
+        +   '<div class="result-headline">'
+        +     '<div class="result-eyebrow">Imported (loose) — ' + liftLabel + '</div>'
+        +     '<div class="result-big">' + fmt(displayCY) + '</div>'
+        +     '<div class="result-unit">cubic yards</div>'
+        +   '</div>'
+        +   '<div class="metrics">'
+        +     metric('Cost', money(r.totalCost), '')
+        +     metric('Sell', money(r.totalSell), 'is-primary')
+        +     metric('Profit', money(r.profit), r.profit >= 0 ? 'is-good' : 'is-bad')
+        +   '</div>'
+        +   (r.totalSell > 0
+              ? '<div class="margin-row">'
+                 + '<span class="margin-label">Margin</span>'
+                 + '<span class="margin-value">' + r.margin.toFixed(1) + '%</span>'
+                 + '</div>'
+              : '')
+        + '</div>';
+
+      if (r.liftFt < 0) {
+        // For cut sites the imported number is meaningless; result still shown but cleaner.
+      }
+
+      saveEl.innerHTML = ''
+        + '<button type="button" class="btn btn-secondary" id="show-save">Save this quote</button>'
+        + '<div class="save-form" id="save-form">'
+        +   '<input class="input" id="client-name" type="text" placeholder="Client or project name" autocomplete="off">'
+        +   '<div class="btn-row">'
+        +     '<button type="button" class="btn" id="do-save">Save</button>'
+        +     '<button type="button" class="btn btn-secondary" id="cancel-save">Cancel</button>'
+        +   '</div>'
+        + '</div>';
+
+      document.getElementById('show-save').onclick = function () {
+        document.getElementById('save-form').classList.add('is-open');
+        var ci = document.getElementById('client-name');
+        if (ci) ci.focus();
+      };
+      document.getElementById('cancel-save').onclick = function () {
+        document.getElementById('save-form').classList.remove('is-open');
+      };
+      document.getElementById('do-save').onclick = function () {
+        var nameInput = document.getElementById('client-name');
+        var name = nameInput.value.trim();
+        if (!lastResult) return;
+        saveQuote(name, readInputs(), lastResult);
+        document.getElementById('save-form').classList.remove('is-open');
+        nameInput.value = '';
+        toast('Saved' + (name ? ' — ' + name : ''));
+      };
+    }
+
+    recompute();
+  }
+
+  function field(label, suffix, name, type, placeholder, value) {
+    var v = value == null ? '' : ' value="' + escapeHtml(value) + '"';
+    var ph = placeholder == null ? '' : ' placeholder="' + escapeHtml(placeholder) + '"';
+    return ''
+      + '<label class="field">'
+      +   '<div class="field-label">'
+      +     '<span class="field-name">' + escapeHtml(label) + '</span>'
+      +     (suffix ? '<span class="field-suffix">' + escapeHtml(suffix) + '</span>' : '')
+      +   '</div>'
+      +   '<input class="input" type="' + type + '" inputmode="decimal" data-input="' + name + '"' + v + ph + '>'
+      + '</label>';
+  }
+
+  function metric(label, value, valueClass) {
+    return ''
+      + '<div class="metric">'
+      +   '<div class="metric-label">' + escapeHtml(label) + '</div>'
+      +   '<div class="metric-value ' + valueClass + '">' + value + '</div>'
+      + '</div>';
+  }
+
+  function renderSaved() {
+    var view = document.getElementById('view');
+    var db = loadDb();
+
+    var items = db.projects.map(function (p) {
+      var lead = null;
+      for (var i = 0; i < db.leads.length; i++) {
+        if (db.leads[i].id === p.leadId) { lead = db.leads[i]; break; }
+      }
+      var est = (p.estimates && p.estimates[0]) || null;
+      return { p: p, lead: lead, est: est };
+    });
+
+    var count = items.length;
+    var head = ''
+      + '<section class="hero">'
+      +   '<div class="eyebrow">Saved quotes</div>'
+      +   '<h1 class="h1">' + count + ' quote' + (count === 1 ? '' : 's') + '</h1>'
+      +   '<p class="lede">Stored in this browser. Nothing is sent anywhere.</p>'
+      + '</section>';
+
+    if (count === 0) {
+      view.innerHTML = head
+        + '<div class="empty">'
+        +   'No saved quotes yet.<br><br>'
+        +   '<a href="#/">Run a quote &rarr;</a>'
+        + '</div>';
+      return;
+    }
+
+    var listHtml = items.map(function (row) {
+      var p = row.p, lead = row.lead, est = row.est;
+      var name = lead && lead.name ? lead.name : 'Untitled quote';
+      var acres = est && est.acreage != null ? est.acreage : p.acreage;
+      var avg = est && est.avgElevation != null ? est.avgElevation : null;
+      var tgt = est && est.targetElevation != null ? est.targetElevation : null;
+      var importedCY = est && est.loadedVolumeCY != null ? est.loadedVolumeCY : null;
+      var sell = est && est.totalSell != null ? est.totalSell : null;
+      var profit = est && est.profit != null ? est.profit : null;
+
+      var elevStr = (avg != null && tgt != null)
+        ? fmt(avg, 2) + ' &rarr; ' + fmt(tgt, 2) + ' ft'
+        : '';
+      var moneyStr = '';
+      if (sell) moneyStr += ' &middot; ' + money(sell) + ' sell';
+      if (profit != null && profit !== 0) moneyStr += ' &middot; ' + money(profit) + ' profit';
+
+      return ''
+        + '<li class="saved-item">'
+        +   '<div class="saved-row">'
+        +     '<div>'
+        +       '<div class="saved-name">' + escapeHtml(name) + '</div>'
+        +       '<div class="saved-meta"><b>' + fmt(acres) + ' ac</b>'
+        +         (elevStr ? ' &middot; ' + elevStr : '')
+        +         moneyStr
+        +       '</div>'
+        +     '</div>'
+        +     '<div class="saved-cy">' + fmt(importedCY) + '<small>CY</small></div>'
+        +   '</div>'
+        +   '<div class="saved-actions">'
+        +     '<button type="button" class="link-btn" data-delete="' + escapeHtml(p.id) + '">Delete</button>'
+        +   '</div>'
+        + '</li>';
+    }).join('');
+
+    view.innerHTML = head + '<ul class="saved-list">' + listHtml + '</ul>';
+
+    var dels = view.querySelectorAll('[data-delete]');
+    for (var i = 0; i < dels.length; i++) {
+      dels[i].addEventListener('click', function (ev) {
+        var id = ev.currentTarget.getAttribute('data-delete');
+        if (!confirm('Delete this saved quote?')) return;
+        deleteSaved(id);
+        toast('Deleted');
+        renderSaved();
+      });
+    }
+  }
+
+  // ---------- routing ----------
+  function route() {
+    var hash = location.hash || '#/';
+    var isSaved = hash.indexOf('#/saved') === 0;
+    var links = document.querySelectorAll('.nav-link');
+    for (var i = 0; i < links.length; i++) {
+      var r = links[i].getAttribute('data-route');
+      links[i].classList.toggle('active', (r === 'saved') === isSaved);
+    }
+    if (isSaved) renderSaved();
+    else renderQuote();
+  }
+  window.addEventListener('hashchange', route);
+  route();
+})();
+</script>
+
+</body>
+</html>

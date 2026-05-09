@@ -1,57 +1,32 @@
-# Deploy to Netlify (5 minutes)
+# Deploy
 
-The app needs **one thing** in the cloud: a Postgres database to store leads/projects/estimates.
-No API keys, no third-party services beyond the database.
+This is a static site — one HTML file. There is no build step, no database, no environment variables.
 
-## Step 1 — Create a free Postgres database (Neon)
+## Option 1 — Netlify drag-and-drop (60 seconds)
 
-1. Go to **https://neon.tech** → Sign up (free, no credit card)
-2. "Create project" → name it whatever (e.g. "land-quoter")
-3. After it provisions, copy the **connection string** shown on the dashboard. It looks like:
-   ```
-   postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
-   ```
+1. Go to **https://app.netlify.com/drop**
+2. Drag the project folder onto the page
+3. Done. Netlify gives you a URL like `https://something-cool-1234.netlify.app`
 
-This URL **is** your database — there's nothing else to configure.
+## Option 2 — Netlify from GitHub (recommended for ongoing changes)
 
-## Step 2 — Push the code to GitHub
+1. Push the repo to GitHub.
+2. Go to **https://app.netlify.com/start** → Import from Git → pick the repo.
+3. Build settings auto-detect from `netlify.toml` (no build command, publish dir = `.`).
+4. Click Deploy. Live in seconds.
 
-Unzip the project, then in Terminal:
+## Option 3 — Any static host
 
-```bash
-cd land-quoter
-git init
-git add .
-git commit -m "initial"
-gh repo create land-quoter --private --source=. --push
-```
-
-(If you don't have `gh` installed, just create a private repo on github.com and follow their "push existing repo" instructions.)
-
-## Step 3 — Deploy on Netlify
-
-1. Go to **https://app.netlify.com/start** → Import from Git → pick the `land-quoter` repo
-2. Build settings auto-detect from `netlify.toml`. Just click through.
-3. **Site settings → Environment variables → Add a single variable:**
-   - Key: `DATABASE_URL`
-   - Value: the Neon URL from Step 1
-4. **Deploys → Trigger deploy → Deploy site.** First build takes ~2 min and runs `prisma db push` automatically to create your tables.
-5. When it's done, click the URL Netlify gives you. App is live.
+Drop `index.html` (and `netlify.toml` if you want) onto Vercel, Cloudflare Pages, GitHub Pages, S3, or your own server. It's just one file.
 
 ## Local development
 
 ```bash
-cp .env.example .env
-# paste your Neon URL into .env
-npm install
-npx prisma db push
-npm run dev          # http://localhost:3000
+open index.html
+# or, if you prefer a local server:
+python3 -m http.server 8000   # http://localhost:8000
 ```
 
-You can use the same Neon DB for local and prod, or create a separate Neon project for staging.
+## Custom domain
 
-## Notes
-
-- **No API key needed.** Everything works with manual entry + CSV paste for topo shots.
-- **Free tier:** Neon free = 0.5 GB storage (plenty), Netlify free = 100 GB bandwidth/mo, 300 build minutes/mo. You won't hit either with normal use.
-- **Custom domain:** Netlify → Domain settings → Add custom domain. Point your DNS at Netlify, done.
+Netlify → Domain settings → Add custom domain. Point your DNS at Netlify.

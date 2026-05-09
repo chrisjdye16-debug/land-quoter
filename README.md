@@ -1,47 +1,43 @@
 # Land Quoter
 
-Estimating + CRM for land developers. Next.js + Postgres. Deploys to Netlify in ~5 minutes.
+Fast dirt-import quotes for land developers. One static HTML file. Zero backend, zero build, zero config.
 
-**To deploy:** see [DEPLOY.md](./DEPLOY.md).
+## What it does
 
-## What's in v1
+Enter acreage, current and target elevation, shrinkage %, your cost per CY, and your sell price.
+Get a live quote: imported (loose) cubic yards, total cost, total sell, profit, margin.
 
-- **CRM**: Leads → Projects → Estimates, all persisted (versioned per project)
-- **Dirt import/export estimator**:
-  - Inputs: acreage, target elevation, shrinkage %, $/CY material, $/CY haul
-  - Outputs: neat (compacted) volume, loose (imported) volume, total cost
-  - Uses TIN-weighted average elevation when shots have x/y coords; plain mean otherwise
-- **Topo data input — two methods, no API key needed:**
-  1. **Paste CSV** — fuzzy header detection (`pointId, northing, easting, elevation` or just bare elevations)
-  2. **Manual entry** — single-shot form
-- **Other estimate types stubbed for later:** clearing, grading, utilities, paving, other
+Optionally save quotes to your browser's local storage (no account, no server).
 
-## Smoke test (200 ac, 427.26 → 439)
+## How the math works
 
-- Neat fill: **3,788,107 CY**
-- With 20% shrinkage: **4,735,133 CY** imported
+```
+compacted CY = (acreage × 43560 × elevation_diff) / 27
+imported CY  = compacted_CY / (1 − shrinkage / 100)
+```
 
-## Local development
+## Smoke test (200 ac, 427.26 ft → 439 ft, 20% shrinkage)
+
+- Compacted (in-place) volume: **3,788,107 CY**
+- Imported (loose, with 20% shrinkage): **4,735,135 CY**
+
+## Run locally
+
+Just open `index.html` in a browser. There is no build step.
 
 ```bash
-cp .env.example .env
-# edit .env, paste your Neon (or any Postgres) URL
-npm install
-npx prisma db push
-npm run dev          # http://localhost:3000
+open index.html
+# or, if you prefer a server:
+python3 -m http.server 8000   # then visit http://localhost:8000
 ```
+
+## Deploy
+
+See [DEPLOY.md](./DEPLOY.md). Drag the folder onto Netlify (or any static host) — done.
 
 ## File layout
 
 ```
-prisma/schema.prisma   # DB schema
-src/lib/dirt.ts        # volume calc + TIN
-src/lib/csvShots.ts    # CSV parser
-src/app/               # pages + API routes
-netlify.toml           # Netlify build config
+index.html      # the entire app: markup, CSS, JS in one file
+netlify.toml    # publish dir = repo root, no build command
 ```
-
-## DB tools
-
-- `npm run db:studio` — Prisma Studio GUI for browsing/editing data
-- `npm run db:push` — apply schema changes to your Postgres
