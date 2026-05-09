@@ -3,38 +3,134 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
+  --bg: #0c0a09;
+  --bg-2: #1c1917;
+  --line: #292524;
+  --text: #fafaf9;
+  --muted: #a8a29e;
+  --gold: #f59e0b;
 }
-body {
-  @apply bg-stone-50 text-stone-900;
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-.btn {
-  @apply inline-flex items-center justify-center rounded-md bg-stone-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50;
+
+.font-display {
+  font-family: "Playfair Display", Georgia, serif;
 }
-.btn-secondary {
-  @apply inline-flex items-center justify-center rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-800 hover:bg-stone-100 disabled:opacity-50;
+
+/* Subtle radial gridded background */
+.bg-grid {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(245, 158, 11, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(120, 113, 108, 0.08), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: auto, auto, 32px 32px, 32px 32px;
+  background-position: 0 0, 0 0, -1px -1px, -1px -1px;
 }
-.btn-danger {
-  @apply inline-flex items-center justify-center rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50;
+
+/* Tabular numerals everywhere — quoting is numbers-first */
+.tabnum, input[type="number"], .num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
-.input {
-  @apply w-full rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-sm focus:border-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-500;
-}
-.label {
-  @apply mb-1 block text-xs font-medium uppercase tracking-wide text-stone-500;
-}
+
+/* Card with subtle gradient + glow border */
 .card {
-  @apply rounded-lg border border-stone-200 bg-white p-4 shadow-sm;
+  background: linear-gradient(180deg, rgba(28, 25, 23, 0.9), rgba(12, 10, 9, 0.9));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 30px 60px -30px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
 }
-table.t {
-  @apply w-full text-sm;
+
+.card-glow {
+  position: relative;
 }
-table.t th {
-  @apply border-b border-stone-200 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wide text-stone-500;
+.card-glow::before {
+  content: "";
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
-table.t td {
-  @apply border-b border-stone-100 px-2 py-1.5;
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition-colors;
+  background: linear-gradient(180deg, #f59e0b, #d97706);
+  color: #1c1917;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 8px 24px -8px rgba(245, 158, 11, 0.5);
 }
+.btn:hover { filter: brightness(1.05); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-xl border px-4 py-3 text-sm font-medium transition-colors;
+  border-color: var(--line);
+  background: rgba(28, 25, 23, 0.6);
+  color: var(--text);
+}
+.btn-secondary:hover { background: rgba(41, 37, 36, 0.8); }
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-medium text-stone-400 transition-colors;
+}
+.btn-ghost:hover { color: var(--text); }
+
+.input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(12, 10, 9, 0.5);
+  color: var(--text);
+  padding: 12px 14px;
+  font-size: 16px; /* prevents iOS zoom */
+  transition: border-color 120ms, box-shadow 120ms;
+}
+.input::placeholder { color: #57534e; }
+.input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .chip {
-  @apply inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700;
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
+
+table.t { @apply w-full text-sm; }
+table.t th { @apply border-b px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider; border-color: var(--line); color: var(--muted); }
+table.t td { @apply border-b px-2 py-2.5; border-color: var(--line); }
+table.t tr:hover td { background: rgba(28, 25, 23, 0.5); }
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }

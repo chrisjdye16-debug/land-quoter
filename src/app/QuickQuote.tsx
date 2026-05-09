@@ -3,86 +3,51 @@ import { useMemo, useState } from "react";
 import { computeDirt } from "@/lib/dirt";
 import * as store from "@/lib/store";
 
-const SQFT_PER_ACRE = 43560;
-const CF_PER_CY = 27;
-
 const fmt = (n: any, d = 0) =>
   n == null || !Number.isFinite(Number(n)) ? "—" : Number(n).toLocaleString(undefined, { maximumFractionDigits: d });
 const money = (n: any) =>
   n == null || !Number.isFinite(Number(n))
     ? "—"
     : Number(n).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-const pct = (n: any) =>
-  n == null || !Number.isFinite(Number(n)) ? "—" : `${Number(n).toFixed(1)}%`;
 
 export function QuickQuote() {
-  // Inputs
   const [acreage, setAcreage] = useState("");
   const [current, setCurrent] = useState("");
   const [target, setTarget] = useState("");
   const [shrink, setShrink] = useState("20");
   const [costPerCY, setCostPerCY] = useState("");
-  const [haulPerCY, setHaulPerCY] = useState("");
-  const [pricingMode, setPricingMode] = useState<"sell" | "margin">("margin");
   const [sellPerCY, setSellPerCY] = useState("");
-  const [marginPct, setMarginPct] = useState("25");
 
-  // Save form
-  const [saveOpen, setSaveOpen] = useState(false);
+  const [showSave, setShowSave] = useState(false);
   const [clientName, setClientName] = useState("");
-  const [projectName, setProjectName] = useState("");
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
-  const result = useMemo(() => {
-    const a = Number(acreage);
-    const c = Number(current);
-    const t = Number(target);
+  const r = useMemo(() => {
+    const a = Number(acreage), c = Number(current), t = Number(target);
     if (!a || !Number.isFinite(c) || !Number.isFinite(t)) return null;
-
     const dirt = computeDirt({
       acreage: a,
       targetElevation: t,
       shots: [{ elevation: c }],
       shrinkagePct: Number(shrink) || 0,
       costPerCY: Number(costPerCY) || 0,
-      haulCostPerCY: Number(haulPerCY) || 0,
     });
-
-    const cost = dirt.totalCost;
     const importedCY = Math.max(0, dirt.loadedVolumeCY);
-
-    let sellPriceTotal = 0;
-    let pricePerCY = 0;
-    if (pricingMode === "sell" && sellPerCY) {
-      pricePerCY = Number(sellPerCY);
-      sellPriceTotal = pricePerCY * importedCY;
-    } else if (pricingMode === "margin" && marginPct) {
-      const m = Number(marginPct) / 100;
-      // margin = (price - cost) / price → price = cost / (1 - margin)
-      sellPriceTotal = m < 1 ? cost / (1 - m) : 0;
-      pricePerCY = importedCY > 0 ? sellPriceTotal / importedCY : 0;
-    }
-    const profit = sellPriceTotal - cost;
-    const realizedMargin = sellPriceTotal > 0 ? (profit / sellPriceTotal) * 100 : 0;
-
-    return { ...dirt, cost, importedCY, sellPriceTotal, pricePerCY, profit, realizedMargin };
-  }, [acreage, current, target, shrink, costPerCY, haulPerCY, pricingMode, sellPerCY, marginPct]);
-
-  const canSave = !!result && (clientName.trim() || projectName.trim());
+    const totalCost = importedCY * (Number(costPerCY) || 0);
+    const totalSell = importedCY * (Number(sellPerCY) || 0);
+    const profit = totalSell - totalCost;
+    const margin = totalSell > 0 ? (profit / totalSell) * 100 : 0;
+    return { importedCY, totalCost, totalSell, profit, margin, liftFt: dirt.liftFt };
+  }, [acreage, current, target, shrink, costPerCY, sellPerCY]);
 
   const save = () => {
-    if (!result) return;
-    const lead = store.createLead({
-      name: clientName.trim() || "Untitled client",
-    });
+    if (!r) return;
+    const lead = store.createLead({ name: clientName.trim() || "Untitled" });
     const project = store.createProject({
       leadId: lead.id,
-      name: projectName.trim() || `${fmt(Number(acreage))}-acre fill`,
+      name: `${fmt(Number(acreage))}-ac fill`,
       acreage: Number(acreage),
     });
-    store.addShots(project.id, [
-      { elevation: Number(current), source: "manual" as const },
-    ]);
     store.addEstimate(project.id, {
       type: "dirt_import",
       acreage: Number(acreage),
@@ -90,173 +55,148 @@ export function QuickQuote() {
       avgElevation: Number(current),
       shrinkagePct: Number(shrink) || 0,
       costPerCY: Number(costPerCY) || 0,
-      haulCostPerCY: Number(haulPerCY) || 0,
-      neatVolumeCY: result.neatVolumeCY,
-      loadedVolumeCY: result.loadedVolumeCY,
-      totalCost: result.cost,
-      notes: `Sell: ${money(result.sellPriceTotal)} • Profit: ${money(result.profit)} • Margin: ${pct(result.realizedMargin)}`,
+      neatVolumeCY: r.importedCY * (1 - (Number(shrink) || 0) / 100),
+      loadedVolumeCY: r.importedCY,
+      totalCost: r.totalCost,
+      notes: `Sell ${money(r.totalSell)} • Profit ${money(r.profit)}`,
     });
-    setSavedMsg(`Saved to ${clientName.trim() || "Untitled client"} → ${projectName.trim() || "fill project"}`);
-    setSaveOpen(false);
+    setSavedMsg(`Saved to ${clientName.trim() || "Untitled"}`);
+    setShowSave(false);
     setClientName("");
-    setProjectName("");
-    setTimeout(() => setSavedMsg(null), 4000);
+    setTimeout(() => setSavedMsg(null), 3000);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Quick Quote</h1>
-        <p className="text-sm text-stone-600">
-          Type your numbers — the estimate updates live. Save it to your CRM only when you want.
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-500">
+          Dirt Estimate
+        </p>
+        <h1 className="font-display mt-1 text-4xl font-bold leading-tight tracking-tight">
+          Quote in seconds.
+        </h1>
+        <p className="mt-2 text-sm text-stone-400">
+          Live calc. No setup. Save only when you want.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
-        {/* INPUTS */}
-        <div className="card space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Acreage" suffix="ac">
-              <input className="input" type="number" step="0.01" value={acreage} onChange={(e) => setAcreage(e.target.value)} placeholder="200" />
-            </Field>
-            <Field label="Shrinkage" suffix="%">
-              <input className="input" type="number" value={shrink} onChange={(e) => setShrink(e.target.value)} placeholder="20" />
-            </Field>
-            <Field label="Current elevation" suffix="ft">
-              <input className="input" type="number" step="0.01" value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="427.26" />
-            </Field>
-            <Field label="Target elevation" suffix="ft">
-              <input className="input" type="number" step="0.01" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="439" />
-            </Field>
-          </div>
-
-          <div className="border-t border-stone-200 pt-3">
-            <p className="label">Your costs</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Material" suffix="$/CY">
-                <input className="input" type="number" step="0.01" value={costPerCY} onChange={(e) => setCostPerCY(e.target.value)} placeholder="0" />
-              </Field>
-              <Field label="Haul" suffix="$/CY">
-                <input className="input" type="number" step="0.01" value={haulPerCY} onChange={(e) => setHaulPerCY(e.target.value)} placeholder="0" />
-              </Field>
-            </div>
-          </div>
-
-          <div className="border-t border-stone-200 pt-3">
-            <p className="label">Your pricing</p>
-            <div className="mb-2 flex gap-2 text-xs">
-              <button
-                onClick={() => setPricingMode("margin")}
-                className={`rounded-md px-2 py-1 ${pricingMode === "margin" ? "bg-stone-900 text-white" : "border border-stone-300 bg-white"}`}
-              >
-                Set margin %
-              </button>
-              <button
-                onClick={() => setPricingMode("sell")}
-                className={`rounded-md px-2 py-1 ${pricingMode === "sell" ? "bg-stone-900 text-white" : "border border-stone-300 bg-white"}`}
-              >
-                Set sell $/CY
-              </button>
-            </div>
-            {pricingMode === "margin" ? (
-              <Field label="Target margin" suffix="%">
-                <input className="input" type="number" step="0.1" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} placeholder="25" />
-              </Field>
-            ) : (
-              <Field label="Sell price" suffix="$/CY">
-                <input className="input" type="number" step="0.01" value={sellPerCY} onChange={(e) => setSellPerCY(e.target.value)} placeholder="0" />
-              </Field>
-            )}
-          </div>
+      {/* Inputs */}
+      <div className="card p-5">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Acreage" suffix="ac" v={acreage} set={setAcreage} placeholder="200" />
+          <Field label="Shrinkage" suffix="%" v={shrink} set={setShrink} />
+          <Field label="Current elev." suffix="ft" v={current} set={setCurrent} placeholder="427.26" />
+          <Field label="Target elev." suffix="ft" v={target} set={setTarget} placeholder="439" />
         </div>
 
-        {/* RESULT */}
-        <div className="card border-stone-300 bg-gradient-to-br from-stone-50 to-stone-100">
-          {!result ? (
-            <div className="flex h-full min-h-[300px] items-center justify-center text-center text-sm text-stone-500">
-              Fill in acreage + elevations to see the estimate.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-stone-500">Lift</p>
-                <p className="text-lg font-semibold">
-                  {fmt(result.liftFt, 2)} ft over {fmt(Number(acreage), 2)} ac
-                </p>
-              </div>
+        <div className="my-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+          <span className="h-px flex-1 bg-stone-800" />
+          Pricing
+          <span className="h-px flex-1 bg-stone-800" />
+        </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Stat label="Compacted (neat)" value={`${fmt(result.neatVolumeCY)} CY`} sub="what stays in place" />
-                <Stat label="Imported (loose)" value={`${fmt(result.importedCY)} CY`} sub={`${shrink}% shrinkage`} highlight />
-              </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Your cost" suffix="$/CY" v={costPerCY} set={setCostPerCY} placeholder="0" />
+          <Field label="Sell price" suffix="$/CY" v={sellPerCY} set={setSellPerCY} placeholder="0" />
+        </div>
+      </div>
 
-              <div className="rounded-lg bg-white p-3">
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-stone-500">Your cost</p>
-                    <p className="text-lg font-semibold text-stone-900">{money(result.cost)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-stone-500">Sell price</p>
-                    <p className="text-lg font-semibold text-blue-700">{money(result.sellPriceTotal)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-stone-500">Profit</p>
-                    <p className="text-lg font-semibold text-green-700">{money(result.profit)}</p>
-                  </div>
-                </div>
-                <div className="mt-2 grid grid-cols-3 gap-3 border-t border-stone-200 pt-2 text-center text-xs text-stone-600">
-                  <div>{result.cost > 0 && result.importedCY > 0 ? `${money(result.cost / result.importedCY)} /CY` : "—"}</div>
-                  <div>{result.pricePerCY ? `${money(result.pricePerCY)} /CY` : "—"}</div>
-                  <div>{result.realizedMargin ? `${pct(result.realizedMargin)} margin` : "—"}</div>
-                </div>
-              </div>
+      {/* Result */}
+      {r ? (
+        <div className="card card-glow p-6">
+          <div className="text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+              Imported (loose) • {fmt(r.liftFt, 2)} ft lift
+            </p>
+            <p className="font-display mt-2 num text-5xl font-bold leading-none tracking-tight text-white">
+              {fmt(r.importedCY)}
+            </p>
+            <p className="mt-1 text-sm font-medium uppercase tracking-widest text-amber-500">
+              cubic yards
+            </p>
+          </div>
 
-              <div className="border-t border-stone-200 pt-3">
-                {!saveOpen ? (
-                  <button onClick={() => setSaveOpen(true)} className="btn-secondary w-full">
-                    💾 Save this quote
-                  </button>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <input className="input" placeholder="Client name (optional)" value={clientName} onChange={(e) => setClientName(e.target.value)} />
-                      <input className="input" placeholder="Project name (optional)" value={projectName} onChange={(e) => setProjectName(e.target.value)} />
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={save} className="btn flex-1">Save</button>
-                      <button onClick={() => setSaveOpen(false)} className="btn-secondary">Cancel</button>
-                    </div>
-                  </div>
-                )}
-                {savedMsg && <p className="mt-2 text-center text-xs text-green-700">✅ {savedMsg}</p>}
-              </div>
+          <div className="mt-6 grid grid-cols-3 gap-2">
+            <Metric label="Cost" value={money(r.totalCost)} />
+            <Metric label="Sell" value={money(r.totalSell)} accent="text-sky-300" />
+            <Metric label="Profit" value={money(r.profit)} accent="text-emerald-300" />
+          </div>
+
+          {r.totalSell > 0 && (
+            <div className="mt-4 rounded-xl bg-stone-900/60 px-4 py-3 text-center">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+                Margin
+              </span>
+              <span className="num ml-3 text-lg font-bold tracking-tight text-amber-400">
+                {r.margin.toFixed(1)}%
+              </span>
             </div>
           )}
         </div>
+      ) : (
+        <div className="card flex items-center justify-center p-12 text-sm text-stone-500">
+          Enter acreage + elevations to see the estimate.
+        </div>
+      )}
+
+      {/* Save */}
+      {r && (
+        <div className="space-y-2">
+          {!showSave ? (
+            <button onClick={() => setShowSave(true)} className="btn-secondary w-full">
+              Save this quote
+            </button>
+          ) : (
+            <div className="card space-y-2 p-3">
+              <input
+                className="input"
+                placeholder="Client name (optional)"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button onClick={save} className="btn flex-1">Save</button>
+                <button onClick={() => setShowSave(false)} className="btn-secondary">Cancel</button>
+              </div>
+            </div>
+          )}
+          {savedMsg && (
+            <p className="text-center text-sm text-emerald-400">✓ {savedMsg}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Field({
+  label, suffix, v, set, placeholder,
+}: { label: string; suffix?: string; v: string; set: (s: string) => void; placeholder?: string }) {
+  return (
+    <label className="block">
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <span className="label">{label}</span>
+        {suffix && <span className="text-[10px] font-medium text-stone-500">{suffix}</span>}
       </div>
-    </div>
+      <input
+        className="input num"
+        type="number"
+        inputMode="decimal"
+        value={v}
+        onChange={(e) => set(e.target.value)}
+        placeholder={placeholder}
+      />
+    </label>
   );
 }
 
-function Field({ label, suffix, children }: { label: string; suffix?: string; children: React.ReactNode }) {
+function Metric({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <div>
-      <label className="label flex items-center justify-between">
-        <span>{label}</span>
-        {suffix && <span className="font-normal text-stone-400">{suffix}</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function Stat({ label, value, sub, highlight }: { label: string; value: string; sub?: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-lg p-3 ${highlight ? "bg-stone-900 text-white" : "bg-white"}`}>
-      <p className={`text-[10px] uppercase tracking-wide ${highlight ? "text-stone-300" : "text-stone-500"}`}>{label}</p>
-      <p className="text-xl font-bold">{value}</p>
-      {sub && <p className={`text-[10px] ${highlight ? "text-stone-400" : "text-stone-500"}`}>{sub}</p>}
+    <div className="rounded-xl bg-stone-900/70 px-3 py-3 text-center">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-stone-500">{label}</p>
+      <p className={`num mt-1 text-base font-bold tracking-tight ${accent || "text-white"}`}>
+        {value}
+      </p>
     </div>
   );
 }
