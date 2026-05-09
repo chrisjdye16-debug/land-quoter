@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma, ensureSchema } from "@/lib/db";
+import { getPrisma, ensureSchema } from "@/lib/db";
 import { ProjectWorkbench } from "./ProjectWorkbench";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   await ensureSchema();
+  const prisma = await getPrisma();
   const { id } = await params;
   const project = await prisma.project.findUnique({
     where: { id },

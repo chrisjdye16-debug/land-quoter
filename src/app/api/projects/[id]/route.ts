@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, ensureSchema } from "@/lib/db";
+import { getPrisma, ensureSchema } from "@/lib/db";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await ensureSchema();
+  const prisma = await getPrisma();
   const { id } = await params;
   const project = await prisma.project.findUnique({
     where: { id },
@@ -18,6 +19,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await ensureSchema();
+  const prisma = await getPrisma();
   const { id } = await params;
   const body = await req.json();
   if (body.acreage != null) body.acreage = Number(body.acreage);
@@ -27,6 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await ensureSchema();
+  const prisma = await getPrisma();
   const { id } = await params;
   await prisma.project.delete({ where: { id } });
   return NextResponse.json({ ok: true });

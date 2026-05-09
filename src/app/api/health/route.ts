@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma, ensureSchema } from "@/lib/db";
+import { getPrisma, ensureSchema } from "@/lib/db";
 
 export async function GET() {
   const out: any = {
@@ -11,11 +11,12 @@ export async function GET() {
     timestamp: new Date().toISOString(),
   };
   try {
+    const prisma = await getPrisma();
     await prisma.$queryRawUnsafe("SELECT 1 as ok");
     out.dbConnect = "ok";
   } catch (e: any) {
     out.dbConnect = "FAILED";
-    out.dbError = String(e?.message || e).slice(0, 500);
+    out.dbError = String(e?.message || e).slice(0, 800);
     return NextResponse.json(out, { status: 500 });
   }
   try {
@@ -23,15 +24,14 @@ export async function GET() {
     out.schemaInit = "ok";
   } catch (e: any) {
     out.schemaInit = "FAILED";
-    out.schemaError = String(e?.message || e).slice(0, 500);
+    out.schemaError = String(e?.message || e).slice(0, 800);
     return NextResponse.json(out, { status: 500 });
   }
   try {
-    const count = await prisma.lead.count();
-    out.leadCount = count;
+    const prisma = await getPrisma();
+    out.leadCount = await prisma.lead.count();
   } catch (e: any) {
-    out.leadCount = "FAILED";
-    out.queryError = String(e?.message || e).slice(0, 500);
+    out.queryError = String(e?.message || e).slice(0, 800);
   }
   return NextResponse.json(out);
 }

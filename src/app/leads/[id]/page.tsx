@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma, ensureSchema } from "@/lib/db";
+import { getPrisma, ensureSchema } from "@/lib/db";
 import { NewProjectForm } from "./NewProjectForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeadPage({ params }: { params: Promise<{ id: string }> }) {
   await ensureSchema();
+  const prisma = await getPrisma();
   const { id } = await params;
   const lead = await prisma.lead.findUnique({
     where: { id },
@@ -42,7 +43,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                 <tr><th>Name</th><th>Location</th><th>Acreage</th><th>Estimates</th></tr>
               </thead>
               <tbody>
-                {lead.projects.map((p) => (
+                {lead.projects.map((p: any) => (
                   <tr key={p.id} className="hover:bg-stone-50">
                     <td><Link href={`/projects/${p.id}`} className="font-medium hover:underline">{p.name}</Link></td>
                     <td>{p.location || "—"}</td>

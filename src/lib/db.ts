@@ -1,14 +1,32 @@
-import { PrismaClient } from "@prisma/client";
+// Lazy-initialized Prisma client. Avoid creating it at module load time so
+// that any failure (missing env, missing generated client, bad URL) surfaces
+// as a catchable runtime error rather than crashing the whole route on import.
 
 declare global {
   // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
+  var __prismaClient: any | undefined;
   // eslint-disable-next-line no-var
-  var dbInitialized: boolean | undefined;
+  var __dbInitialized: boolean | undefined;
 }
 
-export const prisma = global.prisma ?? new PrismaClient();
-if (process.env.NODE_ENV !== "production") global.prisma = prisma;
+export async function getPrisma(): Promise<any> {
+  if (global.__prismaClient) return global.__prismaClient;
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      "DATABASE_URL is not set. Add it as an environment variable in your hosting provider and redeploy."
+    );
+  }
+  const mod = await import("@prisma/client");
+  const PrismaClient = (mod as any).PrismaClient;
+  if (!PrismaClient) {
+    throw new Error(
+      "@prisma/client did not export PrismaClient — generated client missing. Check that 'prisma generate' ran during build."
+    );
+  }
+  const client = new PrismaClient();
+  global.__prismaClient = client;
+  return client;
+}
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS "Lead" (
@@ -76,15 +94,11 @@ CREATE TABLE IF NOT EXISTS "Estimate" (
 `;
 
 export async function ensureSchema() {
-  if (global.dbInitialized) return;
-  if (!process.env.DATABASE_URL) {
-    throw new Error(
-      "DATABASE_URL is not set. Add it as an environment variable in your hosting provider (Vercel/Netlify) and redeploy."
-    );
-  }
+  if (global.__dbInitialized) return;
+  const prisma = await getPrisma();
   const statements = SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean);
   for (const stmt of statements) {
     await prisma.$executeRawUnsafe(stmt);
   }
-  global.dbInitialized = true;
+  global.__dbInitialized = true;
 }
