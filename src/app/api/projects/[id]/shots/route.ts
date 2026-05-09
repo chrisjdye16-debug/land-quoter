@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureSchema } from "@/lib/db";
 import { parseCsvShots } from "@/lib/csvShots";
 
 // POST: add shots — either { shots: [...] } JSON, or { csv: "..." } CSV text.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await ensureSchema();
   const { id: projectId } = await params;
   const body = await req.json();
   let shots: any[] = [];
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 // DELETE: clear all shots for project, or one shot via ?shotId=
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await ensureSchema();
   const { id: projectId } = await params;
   const shotId = req.nextUrl.searchParams.get("shotId");
   if (shotId) {

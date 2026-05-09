@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureSchema } from "@/lib/db";
 
 export async function GET() {
+  await ensureSchema();
   const leads = await prisma.lead.findMany({
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { projects: true } } },
@@ -10,6 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  await ensureSchema();
   const body = await req.json();
   const lead = await prisma.lead.create({
     data: {

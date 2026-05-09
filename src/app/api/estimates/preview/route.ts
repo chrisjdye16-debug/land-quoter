@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureSchema } from "@/lib/db";
 import { computeDirt } from "@/lib/dirt";
 
 // Preview a dirt estimate without saving — uses project's stored shots.
 export async function POST(req: NextRequest) {
+  await ensureSchema();
   const body = await req.json();
   const { projectId, acreage, targetElevation, shrinkagePct, costPerCY, haulCostPerCY } = body;
   if (!projectId) return NextResponse.json({ error: "projectId required" }, { status: 400 });

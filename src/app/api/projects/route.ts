@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureSchema } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
+  await ensureSchema();
   const body = await req.json();
   if (!body.leadId || !body.name) {
     return NextResponse.json({ error: "leadId and name required" }, { status: 400 });

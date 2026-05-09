@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureSchema } from "@/lib/db";
 import { computeDirt } from "@/lib/dirt";
 
 export async function POST(req: NextRequest) {
+  await ensureSchema();
   const body = await req.json();
   const { projectId, type, acreage, targetElevation, shrinkagePct, costPerCY, haulCostPerCY, notes } = body;
   if (!projectId || !type) {
